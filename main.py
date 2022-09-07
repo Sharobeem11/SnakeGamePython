@@ -4,7 +4,7 @@ import time
 import random
 
 SIZE = 30  # constant of size of one body part
-
+BACK_COL = (255, 0, 255)
 
 class Food:
     def __init__(self, screen):
@@ -37,7 +37,7 @@ class Snake:
         self.body_y.append(-1)
 
     def draw(self): # creates body block of snake
-        self.screen.fill((255, 0, 255))  # to keep colour when body moving
+        self.screen.fill(BACK_COL)  # to keep colour when body moving
         for item in range(self.length):
             self.screen.blit(self.body, (self.body_x[item], self.body_y[item]))
         pygame.display.flip()
@@ -74,7 +74,7 @@ class Game:
     def __init__(self):
         pygame.init()
         self.surface = pygame.display.set_mode((900, 600))
-        self.surface.fill((255, 0, 255))
+        self.surface.fill(BACK_COL)
         self.snake = Snake(self.surface, 1)
         self.snake.draw()
         self.food = Food(self.surface)
@@ -91,32 +91,62 @@ class Game:
         score = font.render(f"Score: {self.snake.length}", True, (255, 255, 255))
         self.surface.blit(score, (0, 0))
 
+    def end_game(self):
+        self.surface.fill(BACK_COL)
+        font = pygame.font.SysFont("arial", 30)
+        game_over = font.render(f"GAME OVER!", True, (255, 255, 255))
+        self.surface.blit(game_over, (450, 300))
+        final_score = font.render(f"Your Final Score was: {self.snake.length}", True, (255, 255, 255))
+        self.surface.blit(final_score, (450, 350))
+        replay = font.render("Press R to play again:", True, (255, 255, 255))
+        self.surface.blit(replay, (450, 400))
+        pygame.display.flip()
+
+    def restart(self):
+        self.snake = Snake(self.surface, 1)
+        self.food = Food(self.surface)
+
     def play(self):
         playing = True
+        end = False
         while playing:
             for event in pygame.event.get():
                 if event.type == KEYDOWN:  # key pressed
+                    if event.key == K_r:
+                        end = False
                     if event.key == K_q:
                         playing = False
-                    if event.key == K_UP:  # change pos y
-                        self.snake.up_move()
-                    if event.key == K_DOWN:
-                        self.snake.down_move()
-                    if event.key == K_LEFT:
-                        self.snake.left_move()
-                    if event.key == K_RIGHT:
-                        self.snake.right_move()
+                    if not end:
+                        if event.key == K_UP:  # change pos y
+                            self.snake.up_move()
+                        if event.key == K_DOWN:
+                            self.snake.down_move()
+                        if event.key == K_LEFT:
+                            self.snake.left_move()
+                        if event.key == K_RIGHT:
+                            self.snake.right_move()
                 elif event.type == QUIT:
                     playing = False
 
-            self.snake.move()
-            self.food.draw()
-            self.score()
-            pygame.display.flip()
+            try:
+                if not end:
+                    self.snake.move()
+                    self.food.draw()
+                    self.score()
+                    pygame.display.flip()
 
-            if self.is_hit(self.snake.body_x[0], self.snake.body_y[0], self.food.x, self.food.y):
-                self.snake.add_length()
-                self.food.pos_change()
+                    if self.is_hit(self.snake.body_x[0], self.snake.body_y[0], self.food.x, self.food.y): # snake hits apple
+                        self.snake.add_length()
+                        self.food.pos_change()
+
+                    for i in range(3, self.snake.length): # cannot hit body part 2 or 3
+                        if self.is_hit(self.snake.body_x[0], self.snake.body_y[0], self.snake.body_x[i], self.snake.body_y[i]):
+                            raise "GAME OVER"
+            except Exception as e:
+                self.end_game()
+                end = True
+                self.restart()
+
             time.sleep(0.3)
 
 
