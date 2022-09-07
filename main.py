@@ -73,6 +73,8 @@ class Snake:
 class Game:
     def __init__(self):
         pygame.init()
+        pygame.mixer.init()
+        self.play_back_music()
         self.surface = pygame.display.set_mode((900, 600))
         self.surface.fill(BACK_COL)
         self.snake = Snake(self.surface, 1)
@@ -92,6 +94,7 @@ class Game:
         self.surface.blit(score, (0, 0))
 
     def end_game(self):
+        self.bg()
         self.surface.fill(BACK_COL)
         font = pygame.font.SysFont("arial", 30)
         game_over = font.render(f"GAME OVER!", True, (255, 255, 255))
@@ -101,10 +104,24 @@ class Game:
         replay = font.render("Press R to play again:", True, (255, 255, 255))
         self.surface.blit(replay, (450, 400))
         pygame.display.flip()
+        pygame.mixer.music.pause()
 
     def restart(self):
         self.snake = Snake(self.surface, 1)
         self.food = Food(self.surface)
+
+
+    def play_back_music(self):
+        pygame.mixer.music.load("resources/back_music.mp3")
+        pygame.mixer.music.play()
+
+    def play_sound(self, sound):
+        sound = pygame.mixer.Sound(f"resources/{sound}.mp3")
+        pygame.mixer.Sound.play(sound)
+
+    def bg(self):
+        bg = pygame.image.load("resources/sand.jpeg")
+        self.surface.blit(bg, (0, 0))
 
     def play(self):
         playing = True
@@ -113,6 +130,7 @@ class Game:
             for event in pygame.event.get():
                 if event.type == KEYDOWN:  # key pressed
                     if event.key == K_r:
+                        pygame.mixer.music.unpause()
                         end = False
                     if event.key == K_q:
                         playing = False
@@ -130,17 +148,20 @@ class Game:
 
             try:
                 if not end:
+                    self.bg()
                     self.snake.move()
                     self.food.draw()
                     self.score()
                     pygame.display.flip()
 
                     if self.is_hit(self.snake.body_x[0], self.snake.body_y[0], self.food.x, self.food.y): # snake hits apple
+                        self.play_sound("eat")
                         self.snake.add_length()
                         self.food.pos_change()
 
                     for i in range(3, self.snake.length): # cannot hit body part 2 or 3
                         if self.is_hit(self.snake.body_x[0], self.snake.body_y[0], self.snake.body_x[i], self.snake.body_y[i]):
+                            self.play_sound("crash")
                             raise "GAME OVER"
             except Exception as e:
                 self.end_game()
