@@ -1,6 +1,7 @@
 import pygame
 from pygame.locals import *
 import time
+import random
 
 SIZE = 30  # constant of size of one body part
 
@@ -16,6 +17,10 @@ class Food:
         self.screen.blit(self.food, (self.x, self.y))
         pygame.display.flip()
 
+    def pos_change(self):
+        self.x = random.randint(0, 29)*SIZE
+        self.y = random.randint(0, 19)*SIZE
+
 
 class Snake:
     def __init__(self, screen, length):
@@ -25,6 +30,11 @@ class Snake:
         self.body_x = [SIZE] * length  # how many body parts
         self.body_y = [SIZE] * length
         self.dir = "up"
+
+    def add_length(self):
+        self.length += 1
+        self.body_x.append(-1)
+        self.body_y.append(-1)
 
     def draw(self): # creates body block of snake
         self.screen.fill((255, 0, 255))  # to keep colour when body moving
@@ -63,12 +73,23 @@ class Snake:
 class Game:
     def __init__(self):
         pygame.init()
-        self.surface = pygame.display.set_mode((1000, 600))
+        self.surface = pygame.display.set_mode((900, 600))
         self.surface.fill((255, 0, 255))
-        self.snake = Snake(self.surface, 3)
+        self.snake = Snake(self.surface, 1)
         self.snake.draw()
         self.food = Food(self.surface)
         self.food.draw()
+
+    def is_hit(self, x1, y1, x2, y2):
+        if x2 <= x1 < x2 + SIZE:
+            if y2 <= y1 < y2 + SIZE:
+                return True
+        return False
+
+    def score(self):
+        font = pygame.font.SysFont("arial", 30)
+        score = font.render(f"Score: {self.snake.length}", True, (255, 255, 255))
+        self.surface.blit(score, (0, 0))
 
     def play(self):
         playing = True
@@ -90,7 +111,13 @@ class Game:
 
             self.snake.move()
             self.food.draw()
-            time.sleep(0.8)
+            self.score()
+            pygame.display.flip()
+
+            if self.is_hit(self.snake.body_x[0], self.snake.body_y[0], self.food.x, self.food.y):
+                self.snake.add_length()
+                self.food.pos_change()
+            time.sleep(0.3)
 
 
 if __name__ == "__main__":
